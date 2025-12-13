@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Lily Garden</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --panel-color: #16213e;
+            --accent-color: #e94560;
+            --text-color: #ffffff;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        header {
+            background-color: var(--panel-color);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 100;
+        }
+        h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap; 
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, filter 0.2s;
+            font-size: 0.9rem;
+        }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        
+        .btn-pink { background-color: #ff80ab; color: #580026; }
+        .btn-white { background-color: #f5f5f5; color: #333; }
+        .btn-blue { background-color: #add8e6; color: #4e3400; }
+        .btn-gold { background-color: #ffd700; color: #5c4d00; border: 1px solid #fff; }
+        .btn-water { background-color: #2196f3; color: white; }
+        .btn-clear { background-color: #ef5350; color: white; }
+
+        #garden-canvas {
+            flex-grow: 1;
+            position: relative;
+            background: linear-gradient(to top, #0f2027, #203a43, #2c5364);
+            cursor: crosshair;
+            overflow: hidden;
+        }
+
+
+        .firefly {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background-color: #ffff00;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ffff00;
+            opacity: 0;
+            animation: fly 10s linear infinite;
+            pointer-events: none; /
+        }
+        @keyframes fly {
+            0% { opacity: 0; transform: translateY(0) translateX(0); }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-100px) translateX(40px); }
+        }
+
+        .lily-container {
+            position: absolute;
+            bottom: 0; 
+            width: 100px;
+            height: 200px;
+            transform-origin: bottom center;
+            animation: grow 1s ease-out forwards;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+            transition: transform 0.3s ease;
+        }
+
+        .lily-container:hover {
+            transform: scale(1.1);
+            z-index: 50;
+        }
+        .petal { transform-origin: center bottom; opacity: 0.9; }
+        @keyframes grow {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(var(--scale)); opacity: 1; }
+        }
+        @keyframes sway {
+            0%, 100% { transform: rotate(-5deg) scale(var(--scale)); }
+            50% { transform: rotate(5deg) scale(var(--scale)); }
+        }
+        .swaying {
+            animation: sway 3s ease-in-out infinite; 
+        }
+        #toast {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            z-index: 200;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span>Lily Garden</span></h1>
+        <div class="controls">
+            <button class="btn-pink" onclick="plantLily('pink')">+ Pink</button>
+            <button class="btn-white" onclick="plantLily('white')">+ White</button>
+            <button class="btn-blue" onclick="plantLily('blue')">+ Blue</button>
+            <button class="btn-gold" onclick="plantLily('gold')">✨ Gold</button>
+            <button class="btn-water" onclick="waterGarden()">💧 Water</button>
+            <button class="btn-clear" onclick="clearGarden()">🗑️ Clear</button>
+        </div>
+    </header>
+
+    <div id="garden-canvas" onclick="plantRandom(event)">
+        </div>
+
+    <div id="toast">Garden Watered!</div>
+
+    <script>
+        const garden = document.getElementById('garden-canvas');
+        const toast = document.getElementById('toast');
+        let flowerCount = 0;
+
+        const lilyTypes = {
+            'pink': { primary: '#ff4081', secondary: '#f8bbd0' },
+            'white': { primary: '#ffffff', secondary: '#e0e0e0' },
+            'blue': { primary: '#add8e6', secondary: '#add8e6' },
+            'gold': { primary: '#ffd700', secondary: '#fffacd' } 
+        };
+        function createFirefly() {
+            const firefly = document.createElement('div');
+            firefly.className = 'firefly';
+            firefly.style.left = Math.random() * 100 + '%';
+            firefly.style.bottom = Math.random() * 60 + '%';
+           
+            firefly.style.animationDuration = (5 + Math.random() * 10) + 's';
+            garden.appendChild(firefly);
+
+           
+            setTimeout(() => { firefly.remove() }, 15000);
+        }
+ 
+        setInterval(createFirefly, 800);
+
+
+        function plantLily(type, xPos = null) {
+            flowerCount++;
+            
+            const leftPos = xPos !== null ? xPos : Math.random() * 90; 
+            const randomScale = 0.8 + Math.random() * 0.5;
+            const colors = lilyTypes[type];
+            
+            const container = document.createElement('div');
+            container.className = 'lily-container';
+            container.style.left = leftPos + '%';
+            container.style.bottom = (Math.random() * 50) + 'px'; 
+            container.style.setProperty('--scale', randomScale);
+            container.id = 'flower-' + flowerCount;
+
+            const svgContent = `
+                <svg viewBox="0 0 100 200" width="100%" height="100%" style="overflow:visible">
+                    <path d="M50,200 Q50,150 50,100" stroke="#4caf50" stroke-width="4" fill="none" />
+                    
+                    <path d="M50,180 Q20,160 10,140" stroke="#388e3c" stroke-width="3" fill="none" />
+                    <path d="M50,160 Q80,140 90,120" stroke="#388e3c" stroke-width="3" fill="none" />
+
+                    <g transform="translate(50, 100)">
+                        <path d="M0,0 Q-15,-30 0,-60 Q15,-30 0,0" fill="${colors.secondary}" transform="rotate(-45) scale(0.9)" />
+                        <path d="M0,0 Q-15,-30 0,-60 Q15,-30 0,0" fill="${colors.secondary}" transform="rotate(45) scale(0.9)" />
+                        
+                        <path d="M0,0 Q-20,-40 0,-70 Q20,-40 0,0" fill="${colors.primary}" />
+                        <path d="M0,0 Q-20,-40 0,-70 Q20,-40 0,0" fill="${colors.primary}" transform="rotate(-90) scale(0.9)" />
+                        <path d="M0,0 Q-20,-40 0,-70 Q20,-40 0,0" fill="${colors.primary}" transform="rotate(90) scale(0.9)" />
+                        
+                        <line x1="0" y1="0" x2="-5" y2="-40" stroke="#ffd600" stroke-width="1" />
+                        <line x1="0" y1="0" x2="5" y2="-40" stroke="#ffd600" stroke-width="1" />
+                    </g>
+                </svg>
+            `;
+
+            container.innerHTML = svgContent;
+            
+            container.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                container.style.transform = 'scale(0)';
+                setTimeout(() => container.remove(), 300);
+            });
+
+            garden.appendChild(container);
+        }
+
+        function plantRandom(event) {
+           
+            if(event.target !== garden && !event.target.classList.contains('firefly')) return;
+
+            const rect = garden.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * 100;
+            
+            const keys = Object.keys(lilyTypes);
+            const randomType = keys[Math.floor(Math.random() * keys.length)];
+            
+            plantLily(randomType, x);
+        }
+
+        function waterGarden() {
+            const flowers = document.querySelectorAll('.lily-container');
+            flowers.forEach(flower => {
+                flower.classList.add('swaying');
+            });
+            
+            showToast("The lilies are happy!");
+
+            setTimeout(() => {
+                flowers.forEach(flower => {
+                    flower.classList.remove('swaying');
+                });
+            }, 3000);
+        }
+
+        function clearGarden() {
+      
+            const flowers = document.querySelectorAll('.lily-container');
+            flowers.forEach(f => f.remove());
+            flowerCount = 0;
+            showToast("Garden cleared.");
+        }
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.style.opacity = 1;
+            setTimeout(() => { toast.style.opacity = 0; }, 2000);
+        }
+
+        plantLily('pink', 20);
+        plantLily('blue', 50);
+        plantLily('gold', 80);
+
+    </script>
+
+    <script>
+        window.va = window.va || function () { (window.va.q = window.va.q || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
