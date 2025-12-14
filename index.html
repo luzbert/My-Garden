@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Lily Garden</title>
+    <title>Virtual Lily Garden v5 - Butterflies</title>
     <style>
         :root {
             --bg-color: #1a1a2e;
@@ -36,7 +36,7 @@
         .controls {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap; 
+            flex-wrap: wrap;
         }
         button {
             padding: 8px 16px;
@@ -53,6 +53,7 @@
         .btn-white { background-color: #f5f5f5; color: #333; }
         .btn-blue { background-color: #add8e6; color: #4e3400; }
         .btn-gold { background-color: #ffd700; color: #5c4d00; border: 1px solid #fff; }
+        .btn-butterfly { background-color: #ff9800; color: #3e2700; }
         .btn-water { background-color: #2196f3; color: white; }
         .btn-clear { background-color: #ef5350; color: white; }
 
@@ -64,7 +65,6 @@
             overflow: hidden;
         }
 
-
         .firefly {
             position: absolute;
             width: 4px;
@@ -74,7 +74,7 @@
             box-shadow: 0 0 10px #ffff00;
             opacity: 0;
             animation: fly 10s linear infinite;
-            pointer-events: none; /
+            pointer-events: none;
         }
         @keyframes fly {
             0% { opacity: 0; transform: translateY(0) translateX(0); }
@@ -83,14 +83,45 @@
             100% { opacity: 0; transform: translateY(-100px) translateX(40px); }
         }
 
+        .butterfly-container {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            pointer-events: none; 
+            z-index: 60;
+        
+            animation: flutter-by 15s linear forwards;
+        }
+
+       
+        @keyframes flutter-by {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            25% { transform: translate(100px, -50px) rotate(10deg); }
+            50% { transform: translate(200px, 20px) rotate(-10deg); }
+            75% { transform: translate(300px, -80px) rotate(5deg); }
+            100% { transform: translate(450px, -150px) rotate(0deg); opacity: 0; }
+        }
+
+       
+        .wing {
+            transform-origin: center center;
+            animation: flap 0.15s infinite alternate ease-in-out;
+        }
+        @keyframes flap {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(60deg); }
+        }
+        
+    
         .lily-container {
             position: absolute;
             bottom: 0; 
-            width: 100px;
-            height: 200px;
+            width: 120px; 
+            height: 220px; 
             transform-origin: bottom center;
             animation: grow 1s ease-out forwards;
-            filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); 
             transition: transform 0.3s ease;
         }
 
@@ -98,17 +129,24 @@
             transform: scale(1.1);
             z-index: 50;
         }
-        .petal { transform-origin: center bottom; opacity: 0.9; }
+        
+       
+        .sink {
+            transform: translateY(250px) scale(0.9) !important; 
+            opacity: 0;
+            transition: transform 2.5s ease-in, opacity 2.5s ease-in;
+        }
+
         @keyframes grow {
             from { transform: scale(0); opacity: 0; }
             to { transform: scale(var(--scale)); opacity: 1; }
         }
         @keyframes sway {
-            0%, 100% { transform: rotate(-5deg) scale(var(--scale)); }
-            50% { transform: rotate(5deg) scale(var(--scale)); }
+            0%, 100% { transform: rotate(-3deg) scale(var(--scale)); }
+            50% { transform: rotate(3deg) scale(var(--scale)); }
         }
         .swaying {
-            animation: sway 3s ease-in-out infinite; 
+            animation: sway 4s ease-in-out infinite;
         }
         #toast {
             position: absolute;
@@ -127,19 +165,19 @@
 </head>
 <body>
     <header>
-        <h1><span>Lily Garden</span></h1>
+        <h1><span>Lily Garden v5</span></h1>
         <div class="controls">
-           <button class="btn-pink" onclick="plantLily('pink')">🩷 Pink</button>
+            <button class="btn-pink" onclick="plantLily('pink')">🩷 Pink</button>
             <button class="btn-white" onclick="plantLily('white')">🤍 White</button>
             <button class="btn-blue" onclick="plantLily('blue')">💙 Blue</button>
             <button class="btn-gold" onclick="plantLily('gold')">💛 Gold</button>
+            <button class="btn-butterfly" onclick="addButterfly()">🦋 Butterfly</button>
             <button class="btn-water" onclick="waterGarden()">💧 Water</button>
             <button class="btn-clear" onclick="clearGarden()">🗑️ Clear</button>
         </div>
     </header>
 
-    <div id="garden-canvas" onclick="plantRandom(event)">
-        </div>
+    <div id="garden-canvas" onclick="plantRandom(event)"></div>
 
     <div id="toast">Garden Watered!</div>
 
@@ -149,32 +187,68 @@
         let flowerCount = 0;
 
         const lilyTypes = {
-            'pink': { primary: '#ff4081', secondary: '#f8bbd0' },
-            'white': { primary: '#ffffff', secondary: '#e0e0e0' },
-            'blue': { primary: '#add8e6', secondary: '#add8e6' },
-            'gold': { primary: '#ffd700', secondary: '#fffacd' } 
+            'pink': { primary: '#ff4081', secondary: '#d81b60' },
+            'white': { primary: '#ffffff', secondary: '#cccccc' },
+            'blue': { primary: '#add8e6', secondary: '#87ceeb' },
+            'gold': { primary: '#ffd700', secondary: '#daa520' } 
         };
+
         function createFirefly() {
             const firefly = document.createElement('div');
             firefly.className = 'firefly';
             firefly.style.left = Math.random() * 100 + '%';
             firefly.style.bottom = Math.random() * 60 + '%';
-           
             firefly.style.animationDuration = (5 + Math.random() * 10) + 's';
             garden.appendChild(firefly);
-
-           
             setTimeout(() => { firefly.remove() }, 15000);
         }
- 
         setInterval(createFirefly, 800);
+
+     
+        function addButterfly() {
+            const bContainer = document.createElement('div');
+            bContainer.className = 'butterfly-container';
+            
+        
+            bContainer.style.left = (Math.random() * 50) + '%';
+            bContainer.style.bottom = (20 + Math.random() * 40) + '%';
+            
+            const hue = Math.floor(Math.random() * 360);
+            const wingColor = `hsl(${hue}, 80%, 60%)`;
+            const wingAccent = `hsl(${hue}, 80%, 40%)`;
+
+            
+            bContainer.innerHTML = `
+                <svg viewBox="0 0 40 40" width="100%" height="100%" style="overflow:visible">
+                    <ellipse cx="20" cy="20" rx="2" ry="8" fill="#333" />
+                    <path d="M20,12 Q15,5 12,8" stroke="#333" fill="none" stroke-width="0.5"/>
+                    <path d="M20,12 Q25,5 28,8" stroke="#333" fill="none" stroke-width="0.5"/>
+                    
+                    <g transform="translate(20,20)">
+                        <g class="wing" style="animation-delay: -0.15s">
+                             <path d="M0,0 Q-20,-15 -20,0 Q-20,15 0,0" fill="${wingColor}" stroke="${wingAccent}" stroke-width="1"/>
+                        </g>
+                        <g class="wing" transform="scale(-1, 1)">
+                             <path d="M0,0 Q-20,-15 -20,0 Q-20,15 0,0" fill="${wingColor}" stroke="${wingAccent}" stroke-width="1"/>
+                        </g>
+                    </g>
+                </svg>
+            `;
+
+            garden.appendChild(bContainer);
+
+         
+            setTimeout(() => {
+                bContainer.remove();
+            }, 15000);
+        }
 
 
         function plantLily(type, xPos = null) {
             flowerCount++;
             
             const leftPos = xPos !== null ? xPos : Math.random() * 90; 
-            const randomScale = 0.8 + Math.random() * 0.5;
+            const randomScale = 0.7 + Math.random() * 0.6; 
             const colors = lilyTypes[type];
             
             const container = document.createElement('div');
@@ -223,27 +297,26 @@
                         </g>
                         
                         <g stroke="#ffd600" stroke-width="1.5" fill="#8c4b00">
-                             <path d="M0,0 Q-10,-30 -15,-50" fill="none"/>
+                            <path d="M0,0 Q-10,-30 -15,-50" fill="none"/>
                             <ellipse cx="-15" cy="-50" rx="3" ry="5" transform="rotate(-20 -15 -50)"/>
-                             <path d="M0,0 Q10,-30 15,-50" fill="none"/>
+                            <path d="M0,0 Q10,-30 15,-50" fill="none"/>
                              <ellipse cx="15" cy="-50" rx="3" ry="5" transform="rotate(20 15 -50)"/>
-                             <path d="M0,0 Q0,-40 0,-60" fill="none"/>
+                            <path d="M0,0 Q0,-40 0,-60" fill="none"/>
                             <ellipse cx="0" cy="-60" rx="3" ry="5"/>
                              <path d="M0,0 Q-20,-20 -35,-30" fill="none"/>
                             <ellipse cx="-35" cy="-30" rx="3" ry="5" transform="rotate(-60 -35 -30)"/>
                              <path d="M0,0 Q20,-20 35,-30" fill="none"/>
                              <ellipse cx="35" cy="-30" rx="3" ry="5" transform="rotate(60 35 -30)"/>
                         </g>
-                         <circle cx="0" cy="0" r="6" fill="${colors.secondary}"/>
+                        <circle cx="0" cy="0" r="6" fill="${colors.secondary}"/>
                     </g>
                 </svg>
             `;
 
-
             container.innerHTML = svgContent;
             
             container.addEventListener('dblclick', (e) => {
-                e.stopPropagation();
+                e.stopPropagation(); 
                 container.style.transform = 'scale(0)';
                 setTimeout(() => container.remove(), 300);
             });
@@ -252,8 +325,8 @@
         }
 
         function plantRandom(event) {
-           
-            if(event.target !== garden && !event.target.classList.contains('firefly')) return;
+        
+            if(event.target !== garden && !event.target.classList.contains('firefly') && !event.target.closest('.butterfly-container')) return;
 
             const rect = garden.getBoundingClientRect();
             const x = ((event.clientX - rect.left) / rect.width) * 100;
@@ -269,22 +342,29 @@
             flowers.forEach(flower => {
                 flower.classList.add('swaying');
             });
-            
             showToast("The lilies are happy!");
-
             setTimeout(() => {
                 flowers.forEach(flower => {
                     flower.classList.remove('swaying');
                 });
-            }, 3000);
+            }, 4000);
         }
 
         function clearGarden() {
-      
             const flowers = document.querySelectorAll('.lily-container');
-            flowers.forEach(f => f.remove());
-            flowerCount = 0;
+            
+            if(flowers.length === 0) return;
+
+            flowers.forEach(flower => {
+                flower.classList.add('sink');
+            });
+
             showToast("Garden cleared.");
+
+            setTimeout(() => {
+                flowers.forEach(f => f.remove());
+                flowerCount = 0;
+            }, 2500);
         }
 
         function showToast(msg) {
@@ -293,17 +373,16 @@
             setTimeout(() => { toast.style.opacity = 0; }, 2000);
         }
 
+       
         plantLily('pink', 20);
-        plantLily('blue', 50);
-        plantLily('gold', 80);
+        plantLily('white', 40);
+        plantLily('gold', 75);
+        setTimeout(addButterfly, 1000); 
 
     </script>
-
     <script>
         window.va = window.va || function () { (window.va.q = window.va.q || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
 </body>
-
 </html>
-
